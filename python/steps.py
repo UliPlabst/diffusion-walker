@@ -223,7 +223,7 @@ def get_step_fn():
   
 class ChangeNoiseWithWalkParams:
   probability = 10
-  step_min = 42
+  step_min = 44
   step_max = 60
   distance_min: .2
   distance_max: .25  
@@ -239,13 +239,13 @@ class InterpolateEncodingsAndRotateNoiseParams:
   rotation_max: .25
 class RotateNoiseParams:
   probability = 15
-  step_min = 150
-  step_max = 210
+  step_min = 140
+  step_max = 220
   rotation_min: 1
   rotation_max: 1
 class RotateNoiseIterParams:
   probability = 10
-  step_min = 90
+  step_min = 86
   step_max = 120
   iter_min = 1
   iter_max = 3
@@ -253,7 +253,7 @@ class RotateNoiseIterParams:
   rotation_max: .25
 class EncodingWalkParams:
   probability = 5
-  step_min = 42
+  step_min = 44
   step_max = 60
   distance_min: .1
   distance_max: .15
