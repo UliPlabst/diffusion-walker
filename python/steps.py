@@ -456,8 +456,15 @@ def setup():
   encoding = start_encoding
   noise = start_noise
 
+def move_to_end(steps):
+  global encoding
+  global noise
+  global start_encoding
+  global start_noise
+  print("@@ [step fn] Moving to origin")
+  interpolate_encodings_and_rotate_noise(encoding, start_encoding, noise, start_noise, steps, .25)
 
-def run_steps(end_steps = 120):
+def run_steps(max_iter = None, return_to_start_steps = 120):
   global encoding
   global start_encoding
   global noise
@@ -465,6 +472,9 @@ def run_steps(end_steps = 120):
   validate_params()
   step = 0
   while(True):
+    if(max_iter is not None and step > max_iter):
+      break
+    
     res = next_step(encoding, noise)
     if(res is None):
       break
@@ -473,7 +483,8 @@ def run_steps(end_steps = 120):
     save_tensor("./current_encoding", encoding)
     save_tensor("./current_noise", noise)
     step += 1
-
-  print("@@ [step fn] Moving to origin")
-  interpolate_encodings_and_rotate_noise(encoding, start_encoding, noise, start_noise, end_steps, .25)
+    
+  if(return_to_start_steps is not None):
+    move_to_end(return_to_start_steps)
+ 
 
