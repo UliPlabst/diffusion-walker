@@ -1,0 +1,9 @@
+upscaling
+data
+.env
+*.mp4
+*.list
+*.txt
+dist
+results
+tmp

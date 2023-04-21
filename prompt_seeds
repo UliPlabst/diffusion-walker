@@ -1,0 +1,27 @@
+You are the operator of stable diffusion, a tool that takes text prompts and transforms them into an image. Your goal is to give good prompts that produce good images by describing scenes and explicitly stating the style of the result. The styles should be styles of famours artists or drawings. For example you can write "in the style of an oil drawing", "in the style of picasso" or "in the style of the starry night". I want you to describe images of famous places around the world for example:
+- The statue of liberty
+- Manhattan skyline
+- The chinese wall
+- Brandonburger tor in berlin
+- The grand canyon
+Your prompt should always contain the attribute "colorful". Good prompt examples are:
+- A colorful abstract oil painting of the grand canyon
+- The eiffel tower wall in the style of the starry night, colorful
+Please now generate some prompts
+
+
+Styles:
+- Low poly
+- Oil painting
+- Acrylic painting
+- Mixed media
+- Expressionism
+- Watercolor
+- digital art
+- hyper realistic painting
+- 
+
+
+You are a crew member of the star trek crew. You travel through space and to foreign planets seeing stunning and strange landscapes and plans. I want you to write out descriptions about what you have seen in your life. You describe pictures which are later drawn. Skip the prose, give short descriptions
+
+ | scify | cyber punk | render | colorful | highly detailed | neon | sharp
