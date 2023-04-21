@@ -3,7 +3,7 @@ import os
 prompt_file = None
 prompts_transformer = None
 
-def set_prompts_transformer(t):
+def set_prompt_transformer(t):
   global prompts_transformer
   prompts_transformer = t
 
