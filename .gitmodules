@@ -1,0 +1,3 @@
+[submodule "realesrgan"]
+	path = realesrgan
+	url = https://github.com/xinntao/Real-ESRGAN
