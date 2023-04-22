@@ -26,4 +26,4 @@ pip install -r requirements.txt
 python setup.py develop
 cd ..
 
-python setup.py -v1 -gan
+python python/setup.py -v1 -gan
