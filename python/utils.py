@@ -52,7 +52,7 @@ def save_images(images):
   
 def ensure_batches(num):
   if(int(num) != num):
-    raise Exception("{num} is not integer")
+    raise Exception(f"{num} is not integer")
   return int(num)
 
 def save_video():

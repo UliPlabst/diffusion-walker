@@ -225,44 +225,44 @@ class ChangeNoiseWithWalkParams:
   probability = 10
   step_min = 44
   step_max = 60
-  distance_min: .2
-  distance_max: .25  
+  distance_min = .2
+  distance_max = .25  
 class InterpolateEncodingsParams:
   probability = 30
   step_min = 180
   step_max = 360
 class InterpolateEncodingsAndRotateNoiseParams:
-  probability = 20
+  probability = 25
   step_min = 180
   step_max = 360
-  rotation_min: .25
-  rotation_max: .25
+  rotation_min = .25
+  rotation_max = .25
 class RotateNoiseParams:
   probability = 15
   step_min = 140
   step_max = 220
-  rotation_min: 1
-  rotation_max: 1
+  rotation_min = 1
+  rotation_max = 1
 class RotateNoiseIterParams:
   probability = 10
-  step_min = 86
+  step_min = 84
   step_max = 120
   iter_min = 1
   iter_max = 3
-  rotation_min: .25
-  rotation_max: .25
+  rotation_min = .25
+  rotation_max = .25
 class EncodingWalkParams:
   probability = 5
   step_min = 44
   step_max = 60
-  distance_min: .1
-  distance_max: .15
+  distance_min = .1
+  distance_max = .15
   
 class Params:
   change_noise_with_walk = ChangeNoiseWithWalkParams()
   interpolate_encodings = InterpolateEncodingsParams()
   interpolate_encodings_and_rotate_noise = InterpolateEncodingsAndRotateNoiseParams()
-  rotate_noise = RotateNoiseIterParams()
+  rotate_noise = RotateNoiseParams()
   rotate_noise_iter = RotateNoiseIterParams()
   encoding_walk_pos_params = EncodingWalkParams()
   encoding_walk_neg_params = EncodingWalkParams()
@@ -281,8 +281,8 @@ def validate_params():
       params.encoding_walk_pos_params.probability,
       params.encoding_walk_neg_params.probability  
   ])
-  if(probs != 1):
-    raise Exception("Probabilities do not add to 1")
+  if(probs != 100):
+    raise Exception(f"Probabilities do not add to 100, they are {probs}")
   
   ensure_batches(params.change_noise_with_walk.step_min / batch_size)
   ensure_batches(params.change_noise_with_walk.step_max / batch_size)
@@ -456,8 +456,15 @@ def setup():
   encoding = start_encoding
   noise = start_noise
 
+def move_to_end(steps):
+  global encoding
+  global noise
+  global start_encoding
+  global start_noise
+  print("@@ [step fn] Moving to origin")
+  interpolate_encodings_and_rotate_noise(encoding, start_encoding, noise, start_noise, steps, .25)
 
-def run_steps(end_steps = 120):
+def run_steps(max_iter = None, return_to_start_steps = 120):
   global encoding
   global start_encoding
   global noise
@@ -465,6 +472,9 @@ def run_steps(end_steps = 120):
   validate_params()
   step = 0
   while(True):
+    if(max_iter is not None and step > max_iter):
+      break
+    
     res = next_step(encoding, noise)
     if(res is None):
       break
@@ -473,7 +483,8 @@ def run_steps(end_steps = 120):
     save_tensor("./current_encoding", encoding)
     save_tensor("./current_noise", noise)
     step += 1
-
-  print("@@ [step fn] Moving to origin")
-  interpolate_encodings_and_rotate_noise(encoding, start_encoding, noise, start_noise, end_steps, .25)
+    
+  if(return_to_start_steps is not None):
+    move_to_end(return_to_start_steps)
+ 
 
