@@ -34,6 +34,10 @@ def set_prompt_index(idx):
   global prompt_index
   prompt_index = idx
 
+def get_prompt_index():
+  global prompt_index
+  return prompt_index
+
 def get_next_prompt():
    global prompt_index
    global prompts

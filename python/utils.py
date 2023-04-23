@@ -9,6 +9,11 @@ from PIL import Image
 image_cnt = 0
 data_dir = "./data"
 
+class UtilParams:
+   save_latest = True
+   
+util_params = UtilParams()
+
 def set_data_dir(dir):
   global data_dir
   if(os.path.isdir(dir) == False):
@@ -48,6 +53,9 @@ def save_images(images):
     print(f"Saving image {image_cnt}")
     i.save(f"{data_dir}/{image_cnt}.jpg")
     image_cnt += 1
+  if(util_params.save_latest == True and len(images) > 0):
+    last = images[-1]
+    last.save("./latest.jpg")
   return images
   
 def ensure_batches(num):
@@ -55,8 +63,8 @@ def ensure_batches(num):
     raise Exception(f"{num} is not integer")
   return int(num)
 
-def save_video():
-  os.system(f"ffmpeg -framerate 7 -i '{data_dir}/%d.jpg' -safe 0 -c:v libx264 -crf 26 -pix_fmt yuv420p result.mp4")
+def save_video(pattern = "%d.jpg", crf = 26, framerate = 7):
+  os.system(f"ffmpeg -framerate {framerate} -i '{data_dir}/{pattern}' -c:v libx264 -crf {crf} -pix_fmt yuv420p result.mp4")
 
 def add_frames_linear_interp(
         list_imgs: List[np.ndarray],
