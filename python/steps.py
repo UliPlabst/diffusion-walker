@@ -7,7 +7,7 @@ import math
 import random
 from PIL import Image
 from utils import add_frames_linear_interp, export_as_gif, save_images, ensure_batches, save_video, interpolate_frames, get_image_cnt, set_image_cnt, set_data_dir, save_tensor, load_tensor
-from prompts import get_next_prompt, set_prompt_file, set_prompt_index, set_prompt_transformer
+from prompts import get_next_prompt, set_prompt_file, set_prompt_index, set_prompt_transformer, get_prompt_index
 
 keras.mixed_precision.set_global_policy("mixed_float16")
 batch_size = 3
@@ -487,7 +487,7 @@ def run_steps(max_iter = None, return_to_start_steps = 120):
     if(res is None):
       break
     [encoding, noise] = res
-    print(f"@@ Finished step {step}, image_cnt={get_image_cnt()}")
+    print(f"@@ Finished step {step}, image_cnt={get_image_cnt()}, prompt_idx={get_prompt_index()}")
     save_tensor("./current_encoding", encoding)
     save_tensor("./current_noise", noise)
     step += 1
