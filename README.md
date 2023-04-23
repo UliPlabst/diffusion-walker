@@ -5,7 +5,7 @@ docker tensroflow-2.11.0-gpu
 - `pip3 install keras_cv`
 - `pip3 install pillow matplotlib numpy`
 - `pip install -v "protobuf==3.20.0"`
-
+- Wait `while ps -p $PID > /dev/null; do sleep 1; done`
 - Zip `tar -czvf data.tar.gz ./data`
 
 - Fix update

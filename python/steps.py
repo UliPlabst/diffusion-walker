@@ -136,18 +136,20 @@ def rotate_noise_iter(encoding, noise, steps, iterations = 1, circle_fraction = 
   
 def change_noise_with_walk(encoding, noise1, noise2, step_size, steps, interpolation_steps):
   [walk_images, result_encoding] = walk_steps(encoding, noise1, steps, step_size)
-  image_cnt = get_image_cnt()
-  set_image_cnt(image_cnt + interpolation_steps)
-  [return_walk_images, _] = walk_steps(result_encoding, noise2, steps, -1 * step_size)
-  set_image_cnt(image_cnt)
-  interpolated_images = interpolate_frames(walk_images[-1], return_walk_images[0], interpolation_steps)
-  set_image_cnt(image_cnt + interpolation_steps + steps)
+  [rotate_images, result_noise] = rotate_noise(result_encoding, noise1, noise2, interpolation_steps, .25)
+  [return_walk_images, result_encoding] = walk_steps(result_encoding, noise2, steps, -1 * step_size)
+  
+  # image_cnt = get_image_cnt()
+  # set_image_cnt(image_cnt + interpolation_steps)
+  # set_image_cnt(image_cnt)
+  # interpolated_images = interpolate_frames(walk_images[-1], return_walk_images[0], interpolation_steps)
+  # set_image_cnt(image_cnt + interpolation_steps + steps)
 
   all_images = []
   all_images += walk_images
-  all_images += interpolated_images
+  all_images += rotate_images
   all_images += return_walk_images
-  return [all_images, noise2]
+  return [all_images, result_noise]
 
 
 def interpolate_encodings_and_rotate_noise(encoding1, encoding2, noise1, noise2, steps, circle_fraction = 1):
@@ -227,6 +229,8 @@ class ChangeNoiseWithWalkParams:
   step_max = 60
   distance_min = .2
   distance_max = .25  
+  rotation_min_step = 40
+  rotation_max_step = 60
 class InterpolateEncodingsParams:
   probability = 30
   step_min = 180
@@ -321,9 +325,13 @@ def next_step(current_encoding, current_noise):
       params.change_noise_with_walk.distance_max, 
       "distance"
     )
+    rotation_steps = get_steps(
+      params.change_noise_with_walk.rotation_min_step,
+      params.change_noise_with_walk.rotation_max_step
+    )
     noise_2 = get_noise()
     step_size = distance / steps
-    [_, res_noise] = change_noise_with_walk(current_encoding, current_noise, noise_2, step_size, steps, 12)
+    [_, res_noise] = change_noise_with_walk(current_encoding, current_noise, noise_2, step_size, steps, rotation_steps)
     current_noise = res_noise
     
   elif(step == 2): #interpolate_encodings
@@ -479,7 +487,7 @@ def run_steps(max_iter = None, return_to_start_steps = 120):
     if(res is None):
       break
     [encoding, noise] = res
-    print(f"Finished step {step}, image_cnt={get_image_cnt()}")
+    print(f"@@ Finished step {step}, image_cnt={get_image_cnt()}")
     save_tensor("./current_encoding", encoding)
     save_tensor("./current_noise", noise)
     step += 1
