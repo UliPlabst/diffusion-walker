@@ -10,8 +10,8 @@ from utils import add_frames_linear_interp, export_as_gif, save_images, ensure_b
 from prompts import get_next_prompt, set_prompt_file, set_prompt_index, set_prompt_transformer, get_prompt_index
 
 keras.mixed_precision.set_global_policy("mixed_float16")
-batch_size = 3
 model = keras_cv.models.StableDiffusion(jit_compile=True)
+batch_size = 3
 seed = 12345
 noise_shape = (512 // 8, 512 // 8, 4)
 num_steps = 25
@@ -135,21 +135,22 @@ def rotate_noise_iter(encoding, noise, steps, iterations = 1, circle_fraction = 
   
   
 def change_noise_with_walk(encoding, noise1, noise2, step_size, steps, interpolation_steps):
-  [walk_images, result_encoding] = walk_steps(encoding, noise1, steps, step_size)
-  [rotate_images, result_noise] = rotate_noise(result_encoding, noise1, noise2, interpolation_steps, .25)
-  [return_walk_images, result_encoding] = walk_steps(result_encoding, noise2, steps, -1 * step_size)
+  global batch_size
+  batches = ensure_batches(2 * steps / batch_size)
   
-  # image_cnt = get_image_cnt()
-  # set_image_cnt(image_cnt + interpolation_steps)
-  # set_image_cnt(image_cnt)
-  # interpolated_images = interpolate_frames(walk_images[-1], return_walk_images[0], interpolation_steps)
-  # set_image_cnt(image_cnt + interpolation_steps + steps)
-
-  all_images = []
-  all_images += walk_images
-  all_images += rotate_images
-  all_images += return_walk_images
-  return [all_images, result_noise]
+  [batched_noise, result_noise] = generate_noise_rotation_batch(noise1, noise2, 2 * steps, .25)
+  [batched_encodings_to, _] = generate_encoding_walk(encoding, steps, step_size)
+  [batched_encodings_ret, _] = generate_encoding_walk(encoding, steps, -1 * step_size)
+  
+  batched_encodings = []
+  batched_encodings += batched_encodings_to
+  batched_encodings += batched_encodings_ret
+  
+  allimages = []
+  for batch in range(batches):
+    images = create_image_batch(batched_encodings[batch], batched_noise[batch])
+    allimages += images
+  return [allimages, result_noise]
 
 
 def interpolate_encodings_and_rotate_noise(encoding1, encoding2, noise1, noise2, steps, circle_fraction = 1):
