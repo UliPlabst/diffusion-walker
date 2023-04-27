@@ -427,7 +427,7 @@ def restore(prompt_index, image_count):
 
 
 def setup():
-  model.init_model()
+  model.init()
   global start_encoding
   global start_noise
   global encoding

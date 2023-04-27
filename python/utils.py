@@ -64,7 +64,7 @@ def ensure_batches(num):
   return int(num)
 
 def save_video(pattern = "%d.jpg", crf = 26, framerate = 7):
-  os.system(f"ffmpeg -framerate {framerate} -i '{data_dir}/{pattern}' -c:v libx264 -crf {crf} -pix_fmt yuv420p result.mp4")
+  os.system(f"ffmpeg -y -framerate {framerate} -i '{data_dir}/{pattern}' -c:v libx264 -crf {crf} -pix_fmt yuv420p result.mp4")
 
 def add_frames_linear_interp(
         list_imgs: List[np.ndarray],
