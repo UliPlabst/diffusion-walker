@@ -8,22 +8,15 @@ import random
 from PIL import Image
 from utils import add_frames_linear_interp, export_as_gif, save_images, ensure_batches, save_video, interpolate_frames, get_image_cnt, set_image_cnt, set_data_dir, save_tensor, load_tensor
 from prompts import get_next_prompt, set_prompt_file, set_prompt_index, set_prompt_transformer, get_prompt_index
+from model import model
 
 keras.mixed_precision.set_global_policy("mixed_float16")
-model = keras_cv.models.StableDiffusion(jit_compile=True)
-batch_size = 3
 seed = 12345
-noise_shape = (512 // 8, 512 // 8, 4)
-num_steps = 25
 start_encoding = None
 start_noise = None
 encoding = None
 noise = None
 
-
-def set_batch_size(bs):
-  global batch_size
-  batch_size = bs
 
 def generate_noise_rotation_batch(noise1, noise2, steps, circle_fraction = 1):
   walk_scale_x = tf.cos(tf.linspace(0.0, circle_fraction * 2, steps) * math.pi)
@@ -34,21 +27,22 @@ def generate_noise_rotation_batch(noise1, noise2, steps, circle_fraction = 1):
   noise_y = tf.tensordot(walk_scale_y, noise2, axes=0)
   noise = tf.add(noise_x, noise_y)
   
-  batches = ensure_batches(steps / batch_size)
+  batches = ensure_batches(steps / model.batch_size)
   batched_noise = tf.split(noise, batches)
   return [batched_noise, noise[-1]]
 
 
 def generate_interpolated_encodings(encoding_1, encoding_2, steps):
-  global batch_size
+  batch_size = model.batch_size
+  
   interpolated_encodings = tf.linspace(encoding_1, encoding_2, steps)
   batches = ensure_batches(steps / batch_size)
   return tf.split(interpolated_encodings, batches)
  
   
 def generate_encoding_walk(encoding, steps, step_size):
-  global model
-  global batch_size
+  batch_size = model.batch_size
+  
   step = tf.ones_like(encoding) * step_size
   walked_encodings = []
   for step_index in range(steps):
@@ -61,29 +55,16 @@ def generate_encoding_walk(encoding, steps, step_size):
 
 
 def create_image_batch(encoding, noise):
-  global model
-  global batch_size
-  global num_steps
   images = [
     Image.fromarray(img)
-    for img in model.generate_image(
-        encoding,
-        batch_size=batch_size,
-        num_steps=num_steps,
-        diffusion_noise=noise
-    )
+    for img in model.generate_image_batch(encoding, noise)
   ]
   save_images(images)
   return images
 
 
-def encode(prompt):
-  global model
-  return tf.squeeze(model.encode_text(prompt))
- 
-  
 def walk_steps(encoding, noise, steps, step_size):
-  batches = ensure_batches(steps / batch_size)
+  batches = ensure_batches(steps / model.batch_size)
   [batched_encodings, res_encoding] = generate_encoding_walk(encoding, steps, step_size)
   
   allimages = []
@@ -91,12 +72,6 @@ def walk_steps(encoding, noise, steps, step_size):
     images = create_image_batch(batched_encodings[batch], noise)
     allimages += images
   return [allimages, res_encoding]
-
-
-def get_noise():
-  global noise_shape
-  global seed
-  return tf.random.normal(noise_shape, seed=seed, dtype=tf.float64)
 
 
 def walk_steps_return(encoding, noise, steps, step_size):
@@ -112,7 +87,7 @@ def walk_steps_return(encoding, noise, steps, step_size):
 
 
 def rotate_noise(encoding, noise1, noise2, steps, circle_fraction=1):
-  global batch_size
+  batch_size = model.batch_size
   batches = ensure_batches(steps / batch_size)
   [batched_noise, result_noise] = generate_noise_rotation_batch(noise1, noise2, steps, circle_fraction = circle_fraction)
   images = []
@@ -122,12 +97,10 @@ def rotate_noise(encoding, noise1, noise2, steps, circle_fraction=1):
 
 
 def rotate_noise_iter(encoding, noise, steps, iterations = 1, circle_fraction = .25):
-  global batch_size
-  global noise_shape
   global seed
   all_images = []
   for i in range(iterations):
-    noise2 = get_noise()
+    noise2 = model.get_noise()
     [images, result_noise] = rotate_noise(encoding, noise, noise2, steps, circle_fraction = circle_fraction)
     all_images += images
     noise = result_noise
@@ -135,7 +108,7 @@ def rotate_noise_iter(encoding, noise, steps, iterations = 1, circle_fraction = 
   
   
 def change_noise_with_walk(encoding, noise1, noise2, step_size, steps, interpolation_steps):
-  global batch_size
+  batch_size = model.batch_size
   batches = ensure_batches(2 * steps / batch_size)
   
   [batched_noise, result_noise] = generate_noise_rotation_batch(noise1, noise2, 2 * steps, .25)
@@ -154,7 +127,7 @@ def change_noise_with_walk(encoding, noise1, noise2, step_size, steps, interpola
 
 
 def interpolate_encodings_and_rotate_noise(encoding1, encoding2, noise1, noise2, steps, circle_fraction = 1):
-  global batch_size
+  batch_size = model.batch_size
   batches = ensure_batches(steps / batch_size)
   batched_encodings = generate_interpolated_encodings(encoding1, encoding2, steps)
   [batched_noise, result_noise] = generate_noise_rotation_batch(noise1, noise2, steps, circle_fraction = circle_fraction)
@@ -165,7 +138,7 @@ def interpolate_encodings_and_rotate_noise(encoding1, encoding2, noise1, noise2,
 
 
 def interpolate_encodings(encoding1, encoding2, noise, steps):
-  global batch_size
+  batch_size = model.batch_size
   batches = ensure_batches(steps / batch_size)
   batched_encodings = generate_interpolated_encodings(encoding1, encoding2, steps)
   images = []
@@ -175,7 +148,7 @@ def interpolate_encodings(encoding1, encoding2, noise, steps):
 
 
 def get_steps(min, max):
-  global batch_size
+  batch_size = model.batch_size
   steps = random.randint(min, max)
   steps = steps // batch_size * batch_size
   print(f"@@ steps = {steps}")
@@ -276,7 +249,7 @@ params = Params()
 
 def validate_params():
   global params
-  global batch_size
+  batch_size = model.batch_size
   probs = sum([
       params.change_noise_with_walk.probability,
       params.interpolate_encodings.probability,
@@ -330,7 +303,7 @@ def next_step(current_encoding, current_noise):
       params.change_noise_with_walk.rotation_min_step,
       params.change_noise_with_walk.rotation_max_step
     )
-    noise_2 = get_noise()
+    noise_2 = model.get_noise()
     step_size = distance / steps
     [_, res_noise] = change_noise_with_walk(current_encoding, current_noise, noise_2, step_size, steps, rotation_steps)
     current_noise = res_noise
@@ -344,7 +317,7 @@ def next_step(current_encoding, current_noise):
     prompt = get_next_prompt()
     if(prompt is None):
       return None
-    encoding_2 = encode(prompt)
+    encoding_2 = model.encode(prompt)
     [_, res_encoding] = interpolate_encodings(current_encoding, encoding_2, current_noise, steps)
     current_encoding = res_encoding
     
@@ -362,8 +335,8 @@ def next_step(current_encoding, current_noise):
     prompt = get_next_prompt()
     if(prompt is None):
       return None
-    encoding_2 = encode(prompt)
-    noise_2 = get_noise()
+    encoding_2 = model.encode(prompt)
+    noise_2 = model.get_noise()
     [_, res_encoding, res_noise] = interpolate_encodings_and_rotate_noise(current_encoding, encoding_2, current_noise, noise_2, steps, rotation)
     current_encoding = res_encoding
     current_noise = res_noise
@@ -379,7 +352,7 @@ def next_step(current_encoding, current_noise):
       params.rotate_noise.rotation_max,
       "rotation"
     )
-    noise_2 = get_noise()
+    noise_2 = model.get_noise()
     [_, result_noise] = rotate_noise(current_encoding, current_noise, noise_2, steps, rotation)
     current_noise = result_noise
     
@@ -454,12 +427,13 @@ def restore(prompt_index, image_count):
 
 
 def setup():
+  model.init_model()
   global start_encoding
   global start_noise
   global encoding
   global noise
-  start_encoding = encode(get_next_prompt())
-  start_noise = get_noise()
+  start_encoding = model.encode(get_next_prompt())
+  start_noise = model.get_noise()
   save_tensor("./start_encoding", start_encoding)
   save_tensor("./start_noise", start_noise)
   encoding = start_encoding

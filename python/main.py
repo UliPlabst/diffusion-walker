@@ -9,6 +9,8 @@ from PIL import Image
 from utils import set_data_dir
 from prompts import set_prompt_file, set_prompt_transformer
 from steps import run_steps, setup, restore, set_batch_size, validate_params
+from model import model
+
 
 set_batch_size(4)
 set_data_dir("./data")
